@@ -1,0 +1,211 @@
+<html>
+<head>
+    <style>
+        body, html {
+            padding: 0;
+            margin: 0;
+        }
+
+        #ui {
+            position: absolute;
+            cursor: pointer;
+            top: 8vh;
+            user-select: none;
+            left: 0;
+            color: #ffff;
+            z-index: 100;
+        }
+
+        .control {
+            background-color: rebeccapurple;
+            padding: 16px;
+            opacity: 0.64;
+        }
+
+        .control:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body onmousedown="mouser()">
+<script src="pixi.js"></script>
+<div id="ui">
+    <div class="control" onClick="addChar()"><p>add one</p></div>
+    <div class="control" onClick="addHundred()"><p>hundred more</p></div>
+    <div class="control" onClick="removeDudes()"><p>remove all</p></div>
+</div>
+</body>
+</html>
+<script>
+    renderer = PIXI.autoDetectRenderer(
+        256, 256,
+        {antialias: false, transparent: false, resolution: 1}
+    );
+
+    function resize() {
+        renderer.view.style.position = "absolute";
+        renderer.view.style.display = "block";
+        renderer.autoResize = true;
+        renderer.resize(window.innerWidth, window.innerHeight);
+    }
+
+    window.onresize = resize;
+    resize();
+
+    //Add the canvas to the HTML document
+    document.body.appendChild(renderer.view);
+
+    //Create a container object called the `stage`
+    let stage = new PIXI.Container();
+
+    var chars = [];
+    var castle;
+
+    PIXI.loader
+        .add("castle.png")
+        .add("chr.png")
+        .add("box.png")
+        .load(() => {
+            castle = new PIXI.Sprite(PIXI.loader.resources["castle.png"].texture);
+            stage.addChild(castle);
+
+            castle.x = 200;
+            castle.y = -200;
+            castle.scale.y = 1;
+            castle.scale.x = 1;
+
+            castle.interactive = true;
+            castle.mousedown = function (mouse) {
+                console.log(mouse);
+                mouser(mouse.data.getLocalPosition(stage).x, mouse.data.getLocalPosition(stage).y);
+            };
+
+
+            // sprite.rotation
+            // sprite.position.set(x, y)
+            // stage.removeChild
+            // sprite.visible =
+            // sprite.width =
+            // sprite.height =
+            // sprite.scale.set(x,y)
+            // sprite.anchor.set(x, y)
+
+            console.log('loaded');
+        }).on("progress", (loader, resource) => {
+        console.log('loading.. ' + resource.url + " " + loader.progress + "%");
+    });
+
+    //Tell the `renderer` to `render` the `stage`
+    setInterval(() => {
+        renderer.render(stage);
+    }, 200);
+
+    function addHundred() {
+        for (let i = 0; i < 100; i++) {
+            addChar();
+        }
+    }
+
+    function addChar() {
+        let chr = new PIXI.Sprite(PIXI.loader.resources['chr.png'].texture);
+        stage.addChild(chr);
+        chr.position.set(700, 665);
+        chr.rotation = 1;
+        chr.anchor.x = 0.5;
+        chr.anchor.y = 0.5;
+        chr.scale.x = 1.4;
+        chr.scale.y = 1.4;
+        chr.speed = Math.random() * 2 + 0.2;
+        chr.direction = Math.random() * 360;
+        stage.addChild(chr);
+        chars.push(chr);
+    }
+
+    function removeDudes() {
+        chars.forEach(char => {
+           stage.removeChild(char);
+        });
+        chars = [];
+    }
+
+    function mouser(x, y) {
+        let box = new PIXI.Sprite(PIXI.loader.resources['box.png'].texture);
+        stage.addChild(box);
+        box.position.x = x;
+        box.position.y = y;
+        box.anchor.x = 0.5;
+        box.anchor.y = 0.5;
+        box.scale.x = 0.20;
+        box.scale.y = 0.20;
+        stage.addChild(box);
+    }
+
+
+    let counter;
+    function objectCounter() {
+        let style = new PIXI.TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 12,
+            fontStyle: 'italic',
+            fontWeight: 'bold',
+            fill: ['#ffffff', '#00ff99'], // gradient
+            stroke: '#4a1850',
+            strokeThickness: 5,
+            dropShadow: true,
+            dropShadowColor: '#000000',
+            dropShadowBlur: 4,
+            dropShadowAngle: Math.PI / 6,
+            dropShadowDistance: 6,
+            wordWrap: true,
+            wordWrapWidth: 440
+        });
+
+        counter = new PIXI.Text('loading', style);
+        counter.x = 30;
+        counter.y = 24;
+
+        stage.addChild(counter);
+    }
+
+    objectCounter();
+
+    let keys = [];
+    window.onkeyup = function (e) {
+        keys[e.keyCode] = false;
+    };
+    window.onkeydown = function (e) {
+        keys[e.keyCode] = true;
+    };
+
+    function loop() {
+        counter.text = 'objects = ' + chars.length;
+
+        if (keys[37])
+            stage.x += 1;
+        if (keys[38])
+            stage.y += 1;
+        if (keys[39])
+            stage.x -= 1;
+        if (keys[40])
+            stage.y -= 1;
+
+        //Loop this function at 60 frames per second
+        requestAnimationFrame(loop);
+
+        //Move the cat 1 pixel to the right each frame
+        chars.forEach(chr => {
+            chr.position.set(
+                chr.position.x + chr.speed * Math.cos(chr.direction),
+                chr.position.y + chr.speed * Math.sin(chr.direction)
+            );
+
+            chr.rotation += 0.024;
+        });
+
+
+        //Render the stage to see the animation
+        renderer.render(stage);
+    }
+    //Start the game loop
+    loop();
+</script>
