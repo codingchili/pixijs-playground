@@ -5,41 +5,19 @@
             padding: 0;
             margin: 0;
         }
-
-        #ui {
-            position: absolute;
-            cursor: pointer;
-            top: 8vh;
-            user-select: none;
-            left: 0;
-            color: #ffff;
-            z-index: 100;
-        }
-
-        .control {
-            background-color: rebeccapurple;
-            padding: 16px;
-            opacity: 0.64;
-        }
-
-        .control:hover {
-            opacity: 1;
-        }
     </style>
 </head>
-<body onmousedown="mouser()">
+<body>
 <script src="pixi.js"></script>
-<div id="ui">
-    <div class="control" onClick="addChar()"><p>add one</p></div>
-    <div class="control" onClick="addHundred()"><p>hundred more</p></div>
-    <div class="control" onClick="removeDudes()"><p>remove all</p></div>
-</div>
 </body>
 </html>
 <script>
+    const FADE_IN = 0.10625;
+    const FADE_OUT = 0.0627;
+
     renderer = PIXI.autoDetectRenderer(
         256, 256,
-        {antialias: false, transparent: false, resolution: 1}
+        {antialias: false, transparent: false, resolution: 1, backgroundColor: 0x0}
     );
 
     function resize() {
@@ -57,154 +35,148 @@
 
     //Create a container object called the `stage`
     let stage = new PIXI.Container();
+    stage.interactive = true;
+    stage.hitArea = new PIXI.Rectangle(0, 0, 1000, 1000);
 
-    var chars = [];
-    var castle;
-
-    PIXI.loader
-        .add("castle.png")
-        .add("chr.png")
-        .add("box.png")
-        .load(() => {
-            castle = new PIXI.Sprite(PIXI.loader.resources["castle.png"].texture);
-            stage.addChild(castle);
-
-            castle.x = 200;
-            castle.y = -200;
-            castle.scale.y = 1;
-            castle.scale.x = 1;
-
-            castle.interactive = true;
-            castle.mousedown = function (mouse) {
-                console.log(mouse);
-                mouser(mouse.data.getLocalPosition(stage).x, mouse.data.getLocalPosition(stage).y);
-            };
-
-
-            // sprite.rotation
-            // sprite.position.set(x, y)
-            // stage.removeChild
-            // sprite.visible =
-            // sprite.width =
-            // sprite.height =
-            // sprite.scale.set(x,y)
-            // sprite.anchor.set(x, y)
-
-            console.log('loaded');
-        }).on("progress", (loader, resource) => {
-        console.log('loading.. ' + resource.url + " " + loader.progress + "%");
-    });
-
-    //Tell the `renderer` to `render` the `stage`
-    setInterval(() => {
-        renderer.render(stage);
-    }, 200);
-
-    function addHundred() {
-        for (let i = 0; i < 100; i++) {
-            addChar();
-        }
-    }
-
-    function addChar() {
-        let chr = new PIXI.Sprite(PIXI.loader.resources['chr.png'].texture);
-        stage.addChild(chr);
-        chr.position.set(700, 665);
-        chr.rotation = 1;
-        chr.anchor.x = 0.5;
-        chr.anchor.y = 0.5;
-        chr.scale.x = 1.4;
-        chr.scale.y = 1.4;
-        chr.speed = Math.random() * 2 + 0.2;
-        chr.direction = Math.random() * 360;
-        stage.addChild(chr);
-        chars.push(chr);
-    }
-
-    function removeDudes() {
-        chars.forEach(char => {
-           stage.removeChild(char);
-        });
-        chars = [];
-    }
-
-    function mouser(x, y) {
-        let box = new PIXI.Sprite(PIXI.loader.resources['box.png'].texture);
-        stage.addChild(box);
-        box.position.x = x;
-        box.position.y = y;
-        box.anchor.x = 0.5;
-        box.anchor.y = 0.5;
-        box.scale.x = 0.20;
-        box.scale.y = 0.20;
-        stage.addChild(box);
-    }
-
-
-    let counter;
-    function objectCounter() {
+    let counters = [];
+    function hitText(x, y, text, color) {
         let style = new PIXI.TextStyle({
             fontFamily: 'Arial',
             fontSize: 12,
-            fontStyle: 'italic',
+            //fontStyle: 'italic',
             fontWeight: 'bold',
-            fill: ['#ffffff', '#00ff99'], // gradient
-            stroke: '#4a1850',
-            strokeThickness: 5,
-            dropShadow: true,
-            dropShadowColor: '#000000',
-            dropShadowBlur: 4,
-            dropShadowAngle: Math.PI / 6,
-            dropShadowDistance: 6,
+            fill: [color.begin, color.end], // gradient
+            stroke: color.stroke,//
+            strokeThickness: 0,
+            //dropShadow: true,
+           // dropShadowColor: color.shadow, //
+           // dropShadowBlur: 4,
+           // dropShadowAngle: Math.PI / 6,
+           // dropShadowDistance: 6,
             wordWrap: true,
             wordWrapWidth: 440
         });
 
-        counter = new PIXI.Text('loading', style);
-        counter.x = 30;
-        counter.y = 24;
+        counter = new PIXI.Text(text, style);
+        counter.dir = (6.14 / 360) * Math.random() * 360;
 
+        if (text[0] === '+') {
+            counter.dir = (6.14 / 360) * 270;
+        }
+
+        counter.offset = 16;
+        counter.x = x + counter.offset + Math.cos(counter.dir);
+        counter.y = y + counter.offset * Math.sin(counter.dir);
+        counter.alpha = 0;
+        counter.speed = 3.0;
+        counter.ttl = 44;
+        counter.fade_in = 24;
+        counter.face_out = 16;
+
+        counters.push(counter);
         stage.addChild(counter);
     }
 
-    objectCounter();
 
-    let keys = [];
-    window.onkeyup = function (e) {
-        keys[e.keyCode] = false;
-    };
-    window.onkeydown = function (e) {
-        keys[e.keyCode] = true;
-    };
-
-    function loop() {
-        counter.text = 'objects = ' + chars.length;
-
-        if (keys[37])
-            stage.x += 1;
-        if (keys[38])
-            stage.y += 1;
-        if (keys[39])
-            stage.x -= 1;
-        if (keys[40])
-            stage.y -= 1;
-
-        //Loop this function at 60 frames per second
-        requestAnimationFrame(loop);
-
-        //Move the cat 1 pixel to the right each frame
-        chars.forEach(chr => {
-            chr.position.set(
-                chr.position.x + chr.speed * Math.cos(chr.direction),
-                chr.position.y + chr.speed * Math.sin(chr.direction)
-            );
-
-            chr.rotation += 0.024;
+    var chr;
+    PIXI.loader
+        .add("chr.png")
+        .load(() => {
+            chr = new PIXI.Sprite(PIXI.loader.resources["chr.png"].texture);
+            chr.x = 500;
+            chr.y = 500;
+            chr.scale.x = 0.5;
+            chr.scale.y = 0.5;
+            stage.addChild(chr);
         });
 
+    // poison
+    setInterval(() => {
+        hitText(chr.x, chr.y, '-' + Math.trunc(Math.random() * 300 + 9), {
+            begin: '#ffce01',
+            end: '#0a8601',
+            stroke: '#4a1850',
+            shadow: '#000000'
+        });
+    }, 500);
+
+    // magic
+    setInterval(() => {
+        hitText(chr.x, chr.y, '-' + Math.trunc(Math.random() * 300 + 9), {
+            begin: '#ff10df',
+            end: '#650661',
+            stroke: '#4a1850',
+            shadow: '#000000'
+        });
+    }, 200);
+
+    // phys
+    setInterval(() => {
+        hitText(chr.x, chr.y, '-' + Math.trunc(Math.random() * 300 + 9), {
+            begin: '#ff7956',
+            end: '#860107',
+            stroke: '#4a1850',
+            shadow: '#000000'
+        });
+    }, 125);
+
+    // heal
+    setInterval(() => {
+        hitText(chr.x, chr.y, '+' + Math.trunc(Math.random() * 300 + 9), {
+            begin: '#06ff00',
+            end: '#13ff01',
+            stroke: '#4a1850',
+            shadow: '#000000'
+        });
+    }, 4000);
+
+    // heal
+    setInterval(() => {
+        hitText(chr.x, chr.y, '+Hello my name is robba+', {
+            begin: '#ffd8f7',
+            end: '#ffe6eb',
+            stroke: '#00f8ff',
+            shadow: '#000000'
+        });
+    }, 10000);
+
+    function loop() {
+
+        for (let i = 0; i < counters.length; i++) {
+            let counter = counters[i];
+            counter.ttl--;
+
+            if (counter.ttl <= 0 && counter.alpha === 0) {
+                stage.removeChild(counter);
+                counters.splice(i, 1);
+            } else {
+                counter.speed *= 0.94;
+                counter.x += counter.speed * Math.cos(counter.dir);
+                counter.y += counter.speed * Math.sin(counter.dir);
+                counters[i] = counter;
+
+                if (counter.alpha < 1 && counter.ttl > 0) {
+                    counter.alpha += FADE_IN;
+                }
+
+                if (counter.ttl < 0 && counter.alpha > 0) {
+                    counter.alpha -= FADE_OUT;
+                }
+
+                if (counter.alpha > 1) {
+                    counter.alpha = 1;
+                }
+                if (counter.alpha < 0) {
+                    counter.alpha = 0;
+                }
+            }
+        }
 
         //Render the stage to see the animation
         renderer.render(stage);
+
+        //Loop this function at 60 frames per second
+        requestAnimationFrame(loop);
     }
     //Start the game loop
     loop();
