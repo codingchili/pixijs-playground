@@ -9,47 +9,25 @@
 </head>
 <body>
 <script src="pixi.js"></script>
+<script src="common.js"></script>
 </body>
 </html>
 <script>
     const FADE_IN = 0.10625;
     const FADE_OUT = 0.0627;
 
-    renderer = PIXI.autoDetectRenderer(
-        256, 256,
-        {antialias: false, transparent: false, resolution: 1, backgroundColor: 0x0}
-    );
-
-    function resize() {
-        renderer.view.style.position = "absolute";
-        renderer.view.style.display = "block";
-        renderer.autoResize = true;
-        renderer.resize(window.innerWidth, window.innerHeight);
-    }
-
-    window.onresize = resize;
-    resize();
-
-    //Add the canvas to the HTML document
-    document.body.appendChild(renderer.view);
-
-    //Create a container object called the `stage`
-    let stage = new PIXI.Container();
-    stage.interactive = true;
-    stage.hitArea = new PIXI.Rectangle(0, 0, 1000, 1000);
-
     let counters = [];
     function hitText(x, y, text, color) {
         let style = new PIXI.TextStyle({
             fontFamily: 'Arial',
-            fontSize: 12,
+            fontSize: 13,
             //fontStyle: 'italic',
             fontWeight: 'bold',
-            fill: [color.begin, color.end], // gradient
+            fill: [color.begin, color.end],
             stroke: color.stroke,//
             strokeThickness: 0,
             //dropShadow: true,
-           // dropShadowColor: color.shadow, //
+           // dropShadowColor: color.shadow,
            // dropShadowBlur: 4,
            // dropShadowAngle: Math.PI / 6,
            // dropShadowDistance: 6,
@@ -64,12 +42,19 @@
             counter.dir = (6.14 / 360) * 270;
         }
 
+        if (Math.trunc(Math.random() * 5) == 0) {
+            style.fontSize = 16;
+            counter.ttl = 80;
+        } else {
+            counter.ttl = 44;
+        }
+
+
         counter.offset = 16;
         counter.x = x + counter.offset + Math.cos(counter.dir);
         counter.y = y + counter.offset * Math.sin(counter.dir);
         counter.alpha = 0;
         counter.speed = 3.0;
-        counter.ttl = 44;
         counter.fade_in = 24;
         counter.face_out = 16;
 

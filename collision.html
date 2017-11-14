@@ -1,0 +1,113 @@
+<html>
+<head>
+    <style>
+        body, html {
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+<script src="pixi.js"></script>
+<script src="common.js"></script>
+</body>
+</html>
+<script>
+    const SPEED = 0.6185;
+    const CHARS = 300;
+
+    // z-order sorting.
+    function depthCompare(a, b) {
+        if (a.layer !== b.layer) {
+            return Math.max(a.layer, b.layer);
+        }
+        if (a.y + a.height < b.y + b.height)
+            return -1;
+        if (a.y > b.y)
+            return 1;
+        return 0;
+    }
+
+    var chars = [];
+    PIXI.loader
+        .add("chr.png")
+        .load(() => {
+            for (let i = 0; i < CHARS; i++) {
+                chr = new PIXI.Sprite(PIXI.loader.resources["chr.png"].texture);
+                chr.x = Math.random() * WIDTH;
+                chr.y = Math.random() * HEIGHT;
+                chr.scale.x = 0.5;
+                chr.scale.y = 0.5;
+                chr.dir = (6.14 / 360) * Math.random() * 360;
+                chr.id = i;
+                chr.layer = 1;
+                stage.addChild(chr);
+                chars.push(chr);
+            }
+        });
+
+    function spatialHash(x, y) {
+        return Math.trunc(x / GRID_SIZE) + "." + Math.trunc(y / GRID_SIZE);
+    }
+    const GRID_SIZE = 128;
+
+    // draw the spatial grid.
+    let graphics = new PIXI.Graphics();
+    graphics.lineStyle(1, 0xFF0000);
+    graphics.layer = 0;
+    for (let x = 0; x < window.innerWidth; x += GRID_SIZE) {
+        for (let y = 0; y < window.innerHeight; y += GRID_SIZE) {
+            graphics.drawRect(x, y, x + GRID_SIZE, y + GRID_SIZE);
+        }
+    }
+    stage.addChild(graphics);
+
+    function loop() {
+        stage.children.sort(depthCompare);
+        let grid = {};
+
+        // group into buckets using spatial hashing
+        chars.forEach(char => {
+           char.tint = 0xFFFFFF;
+           let hash = spatialHash(char.x, char.y);
+           if (!grid[hash]) {
+               grid[hash] = [];
+           }
+            grid[hash].push(char);
+        });
+
+        // perform collision detection
+        for (let key in grid) {
+            grid[key].forEach(a => {
+                grid[key].forEach(b => {
+                    if (a.id !== b.id) {
+                        if (Math.abs(a.x - b.x) < a.width / 2 && Math.abs(a.y - b.y) < a.height / 2) {
+                            a.tint = 0xFF0000;
+                            a.dir += (6.14 / 360) * Math.random() * 90 + 315;
+                        }
+                    }
+                });
+            });
+        }
+
+        // move the characters around.
+        chars.forEach(chr => {
+            chr.x += Math.cos(chr.dir) * SPEED;
+            chr.y += Math.sin(chr.dir) * SPEED;
+            if (chr.x > WIDTH || chr.x < 0) {
+                chr.dir += (6.14 / 360) * 180;
+            }
+            if (chr.y > WIDTH || chr.y < 0) {
+                chr.dir += (6.14 / 360) * 180
+            }
+        });
+
+        //Render the stage to see the animation
+        renderer.render(stage);
+
+        //Loop this function at 60 frames per second
+        requestAnimationFrame(loop);
+    }
+    //Start the game loop
+    loop();
+</script>
