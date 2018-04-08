@@ -1,6 +1,8 @@
 const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
 
+var app = new PIXI.Application();
+
 renderer = PIXI.autoDetectRenderer(256, 256,
     {antialias: false, transparent: false, resolution: 1, backgroundColor: 0x0}
 );
@@ -20,3 +22,12 @@ document.body.appendChild(renderer.view);
 
 //Create a container object called the `stage`
 var stage = new PIXI.Container();
+
+
+var keys = [];
+window.onkeyup = function (e) {
+    keys[e.keyCode] = false;
+};
+window.onkeydown = function (e) {
+    keys[e.keyCode] = true;
+};
